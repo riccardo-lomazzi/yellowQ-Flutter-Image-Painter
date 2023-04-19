@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart' hide Image;
@@ -44,6 +45,7 @@ class ImagePainter extends StatefulWidget {
     this.onStrokeWidthChanged,
     this.onPaintModeChanged,
     this.textDelegate,
+    this.onImagePainterCreated,
   }) : super(key: key);
 
   ///Constructor for loading image from network url.
@@ -67,6 +69,7 @@ class ImagePainter extends StatefulWidget {
     ValueChanged<double>? onStrokeWidthChanged,
     TextDelegate? textDelegate,
     bool? controlsAtTop,
+    void Function(Controller)? onImagePainterCreated,
   }) {
     return ImagePainter._(
       key: key,
@@ -88,6 +91,7 @@ class ImagePainter extends StatefulWidget {
       onStrokeWidthChanged: onStrokeWidthChanged,
       textDelegate: textDelegate,
       controlsAtTop: controlsAtTop ?? true,
+      onImagePainterCreated: onImagePainterCreated,
     );
   }
 
@@ -112,6 +116,7 @@ class ImagePainter extends StatefulWidget {
     ValueChanged<double>? onStrokeWidthChanged,
     TextDelegate? textDelegate,
     bool? controlsAtTop,
+    void Function(Controller)? onImagePainterCreated,
   }) {
     return ImagePainter._(
       key: key,
@@ -133,6 +138,7 @@ class ImagePainter extends StatefulWidget {
       onStrokeWidthChanged: onStrokeWidthChanged,
       textDelegate: textDelegate,
       controlsAtTop: controlsAtTop ?? true,
+      onImagePainterCreated: onImagePainterCreated,
     );
   }
 
@@ -157,6 +163,7 @@ class ImagePainter extends StatefulWidget {
     ValueChanged<double>? onStrokeWidthChanged,
     TextDelegate? textDelegate,
     bool? controlsAtTop,
+    void Function(Controller)? onImagePainterCreated,
   }) {
     return ImagePainter._(
       key: key,
@@ -178,6 +185,7 @@ class ImagePainter extends StatefulWidget {
       onStrokeWidthChanged: onStrokeWidthChanged,
       textDelegate: textDelegate,
       controlsAtTop: controlsAtTop ?? true,
+      onImagePainterCreated: onImagePainterCreated,
     );
   }
 
@@ -202,6 +210,7 @@ class ImagePainter extends StatefulWidget {
     ValueChanged<double>? onStrokeWidthChanged,
     TextDelegate? textDelegate,
     bool? controlsAtTop,
+    void Function(Controller)? onImagePainterCreated,
   }) {
     return ImagePainter._(
       key: key,
@@ -223,6 +232,7 @@ class ImagePainter extends StatefulWidget {
       onStrokeWidthChanged: onStrokeWidthChanged,
       textDelegate: textDelegate,
       controlsAtTop: controlsAtTop ?? true,
+      onImagePainterCreated: onImagePainterCreated,
     );
   }
 
@@ -242,6 +252,7 @@ class ImagePainter extends StatefulWidget {
     ValueChanged<double>? onStrokeWidthChanged,
     TextDelegate? textDelegate,
     bool? controlsAtTop,
+    void Function(Controller)? onImagePainterCreated,
   }) {
     return ImagePainter._(
       key: key,
@@ -260,6 +271,7 @@ class ImagePainter extends StatefulWidget {
       onStrokeWidthChanged: onStrokeWidthChanged,
       textDelegate: textDelegate,
       controlsAtTop: controlsAtTop ?? true,
+      onImagePainterCreated: onImagePainterCreated,
     );
   }
 
@@ -328,6 +340,8 @@ class ImagePainter extends StatefulWidget {
 
   final ValueChanged<PaintMode>? onPaintModeChanged;
 
+  final void Function(Controller)? onImagePainterCreated;
+
   //the text delegate
   final TextDelegate? textDelegate;
 
@@ -368,6 +382,10 @@ class ImagePainterState extends State<ImagePainter> {
     _textController = TextEditingController();
     _transformationController = TransformationController();
     textDelegate = widget.textDelegate ?? TextDelegate();
+
+    if (widget.onImagePainterCreated != null) {
+      widget.onImagePainterCreated!(_controller);
+    }
   }
 
   @override
@@ -780,11 +798,45 @@ class ImagePainterState extends State<ImagePainter> {
     );
   }
 
+  int _turns = 0;
+
+  void _rotateImage() async {
+    try {
+      if (_image == null) return;
+      var angle = 90;
+      var newImage = await rotatedImage(_image!, angle.toDouble());
+      setState(() {
+        _image = newImage;
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  Future<ui.Image> rotatedImage(ui.Image image, double angle) {
+    var pictureRecorder = ui.PictureRecorder();
+    var canvas = Canvas(pictureRecorder);
+    angle = (angle / 360) * 6.28;
+    final r = sqrt(image.width * image.width + image.height * image.height) / 2;
+    final alpha = atan(image.height / image.width);
+    final gama = alpha + angle;
+    final shiftY = r * sin(gama);
+    final shiftX = r * cos(gama);
+    final translateX = image.width / 2 - shiftX;
+    final translateY = image.height / 2 - shiftY;
+    canvas.translate(translateX, translateY);
+    canvas.rotate(angle);
+    canvas.drawImage(image, Offset.zero, Paint());
+
+    return pictureRecorder.endRecording().toImage(image.width, image.height);
+  }
+
   Widget _buildControls() {
     return Container(
       padding: const EdgeInsets.all(4),
       color: Colors.grey[200],
-      child: Row(
+      child: Wrap(
+        alignment: WrapAlignment.start,
         children: [
           AnimatedBuilder(
             animation: _controller,
@@ -835,6 +887,8 @@ class ImagePainterState extends State<ImagePainter> {
           ),
           IconButton(
               icon: const Icon(Icons.text_format), onPressed: _openTextDialog),
+          IconButton(
+              icon: const Icon(Icons.rotate_right), onPressed: _rotateImage),
           const Spacer(),
           IconButton(
             tooltip: textDelegate.undo,
@@ -850,5 +904,9 @@ class ImagePainterState extends State<ImagePainter> {
         ],
       ),
     );
+  }
+
+  Future<void> repaint() {
+    return _resolveAndConvertImage();
   }
 }

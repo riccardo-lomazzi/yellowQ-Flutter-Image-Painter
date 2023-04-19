@@ -33,12 +33,15 @@ class _ImagePainterExampleState extends State<ImagePainterExample> {
   final _key = GlobalKey<ScaffoldState>();
 
   void saveImage() async {
-    final image = await _imageKey.currentState.exportImage();
+    final image = await _imageKey.currentState?.exportImage();
     final directory = (await getApplicationDocumentsDirectory()).path;
     await Directory('$directory/sample').create(recursive: true);
     final fullPath =
         '$directory/sample/${DateTime.now().millisecondsSinceEpoch}.png';
     final imgFile = File('$fullPath');
+    if (image == null) {
+      return;
+    }
     imgFile.writeAsBytesSync(image);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

@@ -237,7 +237,10 @@ enum PaintMode {
   circle,
 
   ///Allows to draw dashed line between two point.
-  dashLine
+  dashLine,
+
+  ///Scaling
+  scaling,
 }
 
 ///[PaintInfo] keeps track of a single unit of shape, whichever selected.

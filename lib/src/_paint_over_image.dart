@@ -823,7 +823,7 @@ class ImagePainterState extends State<ImagePainter> {
           paint: _paint,
           offset: [],
           text: _textController.text,
-          mode: PaintMode.none,
+          mode: PaintMode.scaling,
         ),
       );
     });

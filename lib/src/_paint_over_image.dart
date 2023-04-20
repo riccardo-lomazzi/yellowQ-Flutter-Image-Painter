@@ -34,6 +34,7 @@ class ImagePainter extends StatefulWidget {
     this.clearAllIcon,
     this.colorIcon,
     this.undoIcon,
+    this.rotateIcon,
     this.isSignature = false,
     this.controlsAtTop = true,
     this.signatureBackgroundColor,
@@ -61,6 +62,7 @@ class ImagePainter extends StatefulWidget {
     Widget? undoIcon,
     Widget? clearAllIcon,
     Widget? colorIcon,
+    Widget? rotateIcon,
     PaintMode? initialPaintMode,
     double? initialStrokeWidth,
     Color? initialColor,
@@ -83,6 +85,7 @@ class ImagePainter extends StatefulWidget {
       undoIcon: undoIcon,
       colorIcon: colorIcon,
       clearAllIcon: clearAllIcon,
+      rotateIcon: rotateIcon,
       initialPaintMode: initialPaintMode,
       initialColor: initialColor,
       initialStrokeWidth: initialStrokeWidth,
@@ -108,6 +111,7 @@ class ImagePainter extends StatefulWidget {
     Widget? undoIcon,
     Widget? clearAllIcon,
     Widget? colorIcon,
+    Widget? rotateIcon,
     PaintMode? initialPaintMode,
     double? initialStrokeWidth,
     Color? initialColor,
@@ -128,6 +132,7 @@ class ImagePainter extends StatefulWidget {
       colors: colors,
       brushIcon: brushIcon,
       undoIcon: undoIcon,
+      rotateIcon: rotateIcon,
       colorIcon: colorIcon,
       clearAllIcon: clearAllIcon,
       initialPaintMode: initialPaintMode,
@@ -155,6 +160,7 @@ class ImagePainter extends StatefulWidget {
     Widget? undoIcon,
     Widget? clearAllIcon,
     Widget? colorIcon,
+    Widget? rotateIcon,
     PaintMode? initialPaintMode,
     double? initialStrokeWidth,
     Color? initialColor,
@@ -177,6 +183,7 @@ class ImagePainter extends StatefulWidget {
       undoIcon: undoIcon,
       colorIcon: colorIcon,
       clearAllIcon: clearAllIcon,
+      rotateIcon: rotateIcon,
       initialPaintMode: initialPaintMode,
       initialColor: initialColor,
       initialStrokeWidth: initialStrokeWidth,
@@ -202,6 +209,7 @@ class ImagePainter extends StatefulWidget {
     Widget? undoIcon,
     Widget? clearAllIcon,
     Widget? colorIcon,
+    Widget? rotateIcon,
     PaintMode? initialPaintMode,
     double? initialStrokeWidth,
     Color? initialColor,
@@ -223,6 +231,7 @@ class ImagePainter extends StatefulWidget {
       brushIcon: brushIcon,
       undoIcon: undoIcon,
       colorIcon: colorIcon,
+      rotateIcon: rotateIcon,
       clearAllIcon: clearAllIcon,
       initialPaintMode: initialPaintMode,
       initialColor: initialColor,
@@ -247,6 +256,7 @@ class ImagePainter extends StatefulWidget {
     Widget? undoIcon,
     Widget? clearAllIcon,
     Widget? colorIcon,
+    Widget? rotateIcon,
     ValueChanged<PaintMode>? onPaintModeChanged,
     ValueChanged<Color>? onColorChanged,
     ValueChanged<double>? onStrokeWidthChanged,
@@ -266,6 +276,7 @@ class ImagePainter extends StatefulWidget {
       undoIcon: undoIcon,
       colorIcon: colorIcon,
       clearAllIcon: clearAllIcon,
+      rotateIcon: rotateIcon,
       onPaintModeChanged: onPaintModeChanged,
       onColorChanged: onColorChanged,
       onStrokeWidthChanged: onStrokeWidthChanged,
@@ -317,6 +328,9 @@ class ImagePainter extends StatefulWidget {
 
   ///Widget for Undo last action on control bar.
   final Widget? undoIcon;
+
+  ///Widget for Rotating image 90 degrees right
+  final Widget? rotateIcon;
 
   ///Widget for clearing all actions on control bar.
   final Widget? clearAllIcon;
@@ -888,7 +902,14 @@ class ImagePainterState extends State<ImagePainter> {
           IconButton(
               icon: const Icon(Icons.text_format), onPressed: _openTextDialog),
           IconButton(
-              icon: const Icon(Icons.rotate_right), onPressed: _rotateImage),
+            tooltip: textDelegate.rotateImage,
+            icon: widget.rotateIcon ??
+                Icon(
+                  Icons.rotate_right,
+                  color: Colors.grey[700],
+                ),
+            onPressed: _rotateImage,
+          ),
           const Spacer(),
           IconButton(
             tooltip: textDelegate.undo,

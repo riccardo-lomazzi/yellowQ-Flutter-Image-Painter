@@ -453,6 +453,7 @@ class ImagePainterState extends State<ImagePainter> {
     } else {
       _isLoaded.value = true;
     }
+    _origImageBackup = _image?.clone();
   }
 
   ///Dynamically sets stroke multiplier on the basis of widget size.
@@ -520,6 +521,8 @@ class ImagePainterState extends State<ImagePainter> {
                 child: AnimatedBuilder(
                   animation: _controller,
                   builder: (context, child) {
+                    print(
+                        "ImageSize: Width: ${_image?.width} / Height: ${_image?.height}");
                     return InteractiveViewer(
                       transformationController: _transformationController,
                       maxScale: 2.4,
@@ -544,7 +547,7 @@ class ImagePainterState extends State<ImagePainter> {
             ),
           ),
           if (!widget.controlsAtTop) _buildControls(),
-          SizedBox(height: MediaQuery.of(context).padding.bottom)
+          // SizedBox(height: MediaQuery.of(context).padding.bottom)
         ],
       ),
     );
@@ -792,7 +795,7 @@ class ImagePainterState extends State<ImagePainter> {
       _controller.color,
       textDelegate,
       onFinished: (context) {
-        if (_textController.text != '') {
+        if (_textController.text.isNotEmpty) {
           setState(
             () {
               _addPaintHistory(
@@ -812,10 +815,17 @@ class ImagePainterState extends State<ImagePainter> {
     );
   }
 
+  int _rotationTurns = 0;
+  ui.Image? _origImageBackup;
+
   void _rotateImage() async {
-    if (_image == null) return;
-    var angle = 90;
-    var newImage = await rotatedImage(_image!, angle.toDouble());
+    if (_image == null || _origImageBackup == null) return;
+    _rotationTurns++;
+    if (_rotationTurns > 3) _rotationTurns = 0;
+    var baseAngle = 90;
+    var newAngle = baseAngle * _rotationTurns;
+    var newImage =
+        await generateRotatedImage(_origImageBackup!, newAngle.toDouble());
     setState(() {
       _image = newImage;
       _addPaintHistory(
@@ -829,9 +839,10 @@ class ImagePainterState extends State<ImagePainter> {
     });
   }
 
-  Future<ui.Image> rotatedImage(ui.Image image, double angle) {
+  Future<ui.Image> generateRotatedImage(ui.Image image, double angle) {
     var pictureRecorder = ui.PictureRecorder();
     var canvas = Canvas(pictureRecorder);
+    var origAngle = angle;
     angle = (angle / 360) * 6.28;
     final r = sqrt(image.width * image.width + image.height * image.height) / 2;
     final alpha = atan(image.height / image.width);
@@ -844,88 +855,103 @@ class ImagePainterState extends State<ImagePainter> {
     canvas.rotate(angle);
     canvas.drawImage(image, Offset.zero, Paint());
 
-    return pictureRecorder.endRecording().toImage(image.width, image.height);
+    var imageWidth = image.width;
+    var imageHeight = image.height;
+
+    if (origAngle / 90 == 1 || origAngle / 90 == 3) {
+      imageWidth = image.height;
+      imageHeight = image.width;
+    }
+
+    return pictureRecorder.endRecording().toImage(imageWidth, imageHeight);
   }
 
   Widget _buildControls() {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      color: Colors.grey[200],
-      child: Wrap(
-        alignment: WrapAlignment.start,
-        children: [
-          AnimatedBuilder(
-            animation: _controller,
-            builder: (_, __) {
-              final icon = paintModes(textDelegate)
-                  .firstWhere((item) => item.mode == _controller.mode)
-                  .icon;
-              return PopupMenuButton(
-                tooltip: textDelegate.changeMode,
-                shape: ContinuousRectangleBorder(
-                  borderRadius: BorderRadius.circular(40),
-                ),
-                icon: Icon(icon, color: Colors.grey[700]),
-                itemBuilder: (_) => [_showOptionsRow()],
-              );
-            },
-          ),
-          AnimatedBuilder(
-            animation: _controller,
-            builder: (_, __) {
-              return PopupMenuButton(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: ContinuousRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                tooltip: textDelegate.changeColor,
-                icon: widget.colorIcon ??
-                    Container(
-                      padding: const EdgeInsets.all(2.0),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.grey),
-                        color: _controller.color,
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            color: Colors.grey[200],
+            child: Wrap(
+              alignment: WrapAlignment.spaceEvenly,
+              children: [
+                AnimatedBuilder(
+                  animation: _controller,
+                  builder: (_, __) {
+                    final icon = paintModes(textDelegate)
+                        .firstWhere((item) => item.mode == _controller.mode)
+                        .icon;
+                    return PopupMenuButton(
+                      tooltip: textDelegate.changeMode,
+                      shape: ContinuousRectangleBorder(
+                        borderRadius: BorderRadius.circular(40),
                       ),
-                    ),
-                itemBuilder: (_) => [_showColorPicker()],
-              );
-            },
-          ),
-          PopupMenuButton(
-            tooltip: textDelegate.changeBrushSize,
-            shape: ContinuousRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            icon:
-                widget.brushIcon ?? Icon(Icons.brush, color: Colors.grey[700]),
-            itemBuilder: (_) => [_showRangeSlider()],
-          ),
-          IconButton(
-              icon: const Icon(Icons.text_format), onPressed: _openTextDialog),
-          IconButton(
-            tooltip: textDelegate.rotateImage,
-            icon: widget.rotateIcon ??
-                Icon(
-                  Icons.rotate_right,
-                  color: Colors.grey[700],
+                      icon: Icon(icon, color: Colors.grey[700]),
+                      itemBuilder: (_) => [_showOptionsRow()],
+                    );
+                  },
                 ),
-            onPressed: _rotateImage,
+                AnimatedBuilder(
+                  animation: _controller,
+                  builder: (_, __) {
+                    return PopupMenuButton(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: ContinuousRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      tooltip: textDelegate.changeColor,
+                      icon: widget.colorIcon ??
+                          Container(
+                            padding: const EdgeInsets.all(2.0),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.grey),
+                              color: _controller.color,
+                            ),
+                          ),
+                      itemBuilder: (_) => [_showColorPicker()],
+                    );
+                  },
+                ),
+                PopupMenuButton(
+                  tooltip: textDelegate.changeBrushSize,
+                  shape: ContinuousRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  icon: widget.brushIcon ??
+                      Icon(Icons.brush, color: Colors.grey[700]),
+                  itemBuilder: (_) => [_showRangeSlider()],
+                ),
+                IconButton(
+                    icon: const Icon(Icons.text_format),
+                    onPressed: _openTextDialog),
+                IconButton(
+                  tooltip: textDelegate.rotateImage,
+                  icon: widget.rotateIcon ??
+                      Icon(
+                        Icons.rotate_right,
+                        color: Colors.grey[700],
+                      ),
+                  onPressed: _rotateImage,
+                ),
+                IconButton(
+                  tooltip: textDelegate.undo,
+                  icon: widget.undoIcon ??
+                      Icon(Icons.reply, color: Colors.grey[700]),
+                  onPressed: () => _controller.undo(),
+                ),
+                IconButton(
+                  tooltip: textDelegate.clearAllProgress,
+                  icon: widget.clearAllIcon ??
+                      Icon(Icons.clear, color: Colors.grey[700]),
+                  onPressed: () => _controller.clear(),
+                ),
+              ],
+            ),
           ),
-          const Spacer(),
-          IconButton(
-            tooltip: textDelegate.undo,
-            icon: widget.undoIcon ?? Icon(Icons.reply, color: Colors.grey[700]),
-            onPressed: () => _controller.undo(),
-          ),
-          IconButton(
-            tooltip: textDelegate.clearAllProgress,
-            icon: widget.clearAllIcon ??
-                Icon(Icons.clear, color: Colors.grey[700]),
-            onPressed: () => _controller.clear(),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

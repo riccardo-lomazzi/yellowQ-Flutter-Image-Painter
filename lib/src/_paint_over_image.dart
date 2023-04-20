@@ -812,19 +812,21 @@ class ImagePainterState extends State<ImagePainter> {
     );
   }
 
-  int _turns = 0;
-
   void _rotateImage() async {
-    try {
-      if (_image == null) return;
-      var angle = 90;
-      var newImage = await rotatedImage(_image!, angle.toDouble());
-      setState(() {
-        _image = newImage;
-      });
-    } catch (e) {
-      print(e);
-    }
+    if (_image == null) return;
+    var angle = 90;
+    var newImage = await rotatedImage(_image!, angle.toDouble());
+    setState(() {
+      _image = newImage;
+      _addPaintHistory(
+        PaintInfo(
+          paint: _paint,
+          offset: [],
+          text: _textController.text,
+          mode: PaintMode.none,
+        ),
+      );
+    });
   }
 
   Future<ui.Image> rotatedImage(ui.Image image, double angle) {
